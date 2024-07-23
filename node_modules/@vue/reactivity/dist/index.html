@@ -16,11 +16,29 @@
       // reactive 让数据变成响应式
       // effect 副作用 数据变化后可以让effect重新执行组件 watch 、 computed 都是基于effect来实现
       const obj = { name: "jw", age: 18 };
-      const state = reactive();
-      console.log(state, "state");
+      const state = reactive(obj);
+      // const state1 = reactive(obj);
+      //如果state1 被代理后 一定有get和set方法
+      // const state2 = reactive(obj);
+      // console.log(state1 === state2, "state");
+      // console.log(state.age, state.name);
+
+      //情况一:
+      // effect(() => {
+      //   console.log(state.name);
+      //   effect(() => {
+      //     console.log(state.name);
+      //   });
+      //   console.log(state.age);
+      // });
+
       effect(() => {
         let app = document.getElementById("app");
         app.innerHTML = `姓名${state.name} 年龄 ${state.age}`;
+      });
+      effect(() => {
+        let app = document.getElementById("app");
+        app.innerHTML = `姓名${state.age} `;
       });
       setTimeout(() => {
         state.age++; //数据变化effect 再次执行
