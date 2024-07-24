@@ -13,6 +13,9 @@ var ReactiveEffect = class {
   constructor(fn, scheduler) {
     this.fn = fn;
     this.scheduler = scheduler;
+    this._trackId = 0;
+    this.deps = [];
+    this._depsLength = 0;
     this.active = true;
   }
   run() {
@@ -28,6 +31,18 @@ var ReactiveEffect = class {
     }
   }
 };
+function trackEffect(effect2, dep) {
+  dep.set(effect2, effect2._trackId);
+  effect2.deps[effect2._depsLength++] = dep;
+  console.log(effect2.deps, "depsss");
+}
+function triggerEffects(dep) {
+  for (const effect2 of dep.keys()) {
+    if (effect2.scheduler) {
+      effect2.scheduler();
+    }
+  }
+}
 
 // packages/shared/src/index.ts
 function isObject(value) {
@@ -35,8 +50,41 @@ function isObject(value) {
 }
 
 // packages/reactivity/src/reactiveEffect.ts
+var targetMap = /* @__PURE__ */ new WeakMap();
+var createDep = (cleanup, key) => {
+  const dep = /* @__PURE__ */ new Map();
+  dep.cleanup = cleanup;
+  dep.name = key;
+  return dep;
+};
 function track(target, key) {
-  console.log(key, activeEffect, "++++");
+  if (activeEffect) {
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+      targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+      dep = depsMap.set(
+        key,
+        createDep(() => {
+          depsMap.delete(key);
+        }, key)
+      );
+    }
+    trackEffect(activeEffect, dep);
+    console.log(targetMap, "targetMap");
+  }
+}
+function trigger(target, key, newValue, oldValue) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    return;
+  }
+  let dep = depsMap.get(key);
+  if (dep) {
+    triggerEffects(dep);
+  }
 }
 
 // packages/reactivity/src/baseHandler.ts
@@ -49,7 +97,12 @@ var mutableHandlers = {
     return Reflect.get(target, key, recevier);
   },
   set(target, key, value, recevier) {
-    return Reflect.set(target, key, value, recevier);
+    let oldValue = target[key];
+    let result = Reflect.set(target, key, value, recevier);
+    if (!oldValue !== value) {
+      trigger(target, key, result, oldValue);
+    }
+    return result;
   }
 };
 
@@ -76,6 +129,8 @@ function reactive(target) {
 export {
   activeEffect,
   effect,
-  reactive
+  reactive,
+  trackEffect,
+  triggerEffects
 };
 //# sourceMappingURL=reactivity.js.map

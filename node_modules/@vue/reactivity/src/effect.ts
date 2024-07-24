@@ -9,6 +9,9 @@ export function effect(fn, options?) {
 }
 export let activeEffect;
 class ReactiveEffect {
+  _trackId = 0;
+  deps = [];
+  _depsLength = 0;
   public active = true; //创建的effect是响应式的
   // fn 用户编写的函数
   //如果fn中依赖的数据变化，需要重新调用->run()
@@ -24,6 +27,21 @@ class ReactiveEffect {
       return this.fn(); //依赖收集
     } finally {
       activeEffect = lastEffect;
+    }
+  }
+}
+
+export function trackEffect(effect, dep) {
+  dep.set(effect, effect._trackId);
+  //effect和dep关联
+  effect.deps[effect._depsLength++] = dep;
+  console.log(effect.deps, "depsss");
+}
+
+export function triggerEffects(dep) {
+  for (const effect of dep.keys()) {
+    if (effect.scheduler) {
+      effect.scheduler();
     }
   }
 }
