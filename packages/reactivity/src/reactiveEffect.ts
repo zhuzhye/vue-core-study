@@ -17,15 +17,12 @@ export function track(target, key) {
     }
     let dep = depsMap.get(key);
     if (!dep) {
-      dep = depsMap.set(
+      depsMap.set(
         key,
-        createDep(() => {
-          depsMap.delete(key);
-        }, key)
-      ); //用于清理属性
+        (dep = createDep(() => depsMap.delete(key), key)) // 后面用于清理不需要的属性
+      );
     }
     trackEffect(activeEffect, dep); //将当前的effect放入dep映射表，后续可以根据值的变化触发次dep中存放的effect
-    console.log(targetMap, "targetMap");
   }
 }
 

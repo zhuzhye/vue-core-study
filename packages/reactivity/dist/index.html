@@ -12,10 +12,10 @@
       //     reactive,
       //     effect,
       //   } from "/node_modules/vue/dist/vue.esm-browser.js";
-      import { reactive, effect } from "./reactivity.js";
+      import { reactive, effect, ref } from "./reactivity.js";
       // reactive 让数据变成响应式
       // effect 副作用 数据变化后可以让effect重新执行组件 watch 、 computed 都是基于effect来实现
-      const obj = { name: "jw", age: 18 };
+      const obj = { name: "jw", age: 18, flag: true, address: { n: 1 } };
       const state = reactive(obj);
       // const state1 = reactive(obj);
       //如果state1 被代理后 一定有get和set方法
@@ -23,7 +23,7 @@
       // console.log(state1 === state2, "state");
       // console.log(state.age, state.name);
 
-      //情况一:
+      //情况一:发生嵌套
       // effect(() => {
       //   console.log(state.name);
       //   effect(() => {
@@ -31,17 +31,46 @@
       //   });
       //   console.log(state.age);
       // });
+      //情况二：访问多次属性
+      // effect(() => {
+      //   app.innerHTML = state.flag + state.flag;
+      // });
+      // 情况三：判断执行完之后name修改依旧会触发更新
+      // const runner = effect(
+      //   () => {
+      //     console.log("runner");
+      //     let app = document.getElementById("app");
+      //     app.innerHTML = state.flag ? state.name : state.age;
+      //   },
+      //   {
+      //     scheduler: () => {
+      //       runner();
+      //       console.log("数据更新了，不重新渲染，走自己的逻辑");
+      //     },
+      //   }
+      // );
 
+      // effect(() => {
+      //   app.innerHTML = state.name;
+      //   state.name = Math.random(); //如果本次在执行effect的时候
+      // });
+
+      // effect(() => {
+      //   app.innerHTML = state.address.n;
+      // });
+      const flag = ref(false);
       effect(() => {
-        let app = document.getElementById("app");
-        app.innerHTML = `姓名${state.name} 年龄 ${state.age}`;
-      });
-      effect(() => {
-        let app = document.getElementById("app");
-        app.innerHTML = `姓名${state.age} `;
+        app.innerHTML = flag.value ? "jw" : 38;
       });
       setTimeout(() => {
-        state.age++; //数据变化effect 再次执行
+        state.address.n = "我的地址";
+        flag.value = true;
+        // state.flag = false;
+        // setTimeout(() => {
+        //   console.log("修改属性之后，不应该触发，effect重新执行");
+        //   state.name = "zzy";
+        // }, 1000);
+        // state.age++; //数据变化effect 再次执行
       }, 3000);
     </script>
   </body>
